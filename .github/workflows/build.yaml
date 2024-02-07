@@ -22,6 +22,21 @@ jobs:
     - name: Checking Out Repository
       uses: actions/checkout@v4
 
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4.0.1
+      with:
+          node-version: 20
+    - name: Setup pnpm
+      run: |
+        npm install --global pnpm
+    - name: Fetching node modules
+      run: |
+        pnpm install
+    - name: Build distributable
+      run: |
+        pnpm lint || true
+        pnpm build
+
     - name: Docker Set up QEMU
       uses: docker/setup-qemu-action@v2.2.0
 
