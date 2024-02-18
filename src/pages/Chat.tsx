@@ -19,9 +19,14 @@ import ChatConversation from "components/ChatConversation.tsx";
 import ChatConversationHistory from "components/ChatConversationHistory.tsx";
 import ChatInput, { ChatInputStatus } from "components/ChatInput.tsx";
 import ChatToolbar from "components/ChatToolbar.tsx";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useDarkMode } from "usehooks-ts";
 
-export default function Chat() {
+export interface ChatProps extends React.ComponentProps<"div"> {
+    darkMode: ReturnType<typeof useDarkMode>;
+}
+
+export default function Chat({ darkMode, ...otherProps }: ChatProps) {
     const [inputStatus, setInputStatus] = useState<ChatInputStatus>("idle");
     const [inputValue, setInputValue] = useState("");
     const [sessionId, setSessionId] = useState<UUID | undefined>(undefined);
@@ -164,7 +169,7 @@ export default function Chat() {
     }
 
     return (
-        <div className="h-full flex">
+        <div className="h-full flex" {...otherProps}>
             <div className="flex flex-col min-w-64 p-3 bg-secondary-50">
                 <Button
                     variant="solid"
@@ -178,12 +183,16 @@ export default function Chat() {
                 <div role="separator" className="py-3"></div>
                 <ScrollShadow className="h-full flex-1">
                     <ChatConversationHistory
+                        isDarkMode={darkMode.isDarkMode}
                         historyConversations={historyConversations}
                     />
                 </ScrollShadow>
             </div>
             <div className="flex flex-col flex-1 items-center">
-                <ChatToolbar className="sticky top-0 w-full pt-2 px-4 min-h-14 flex justify-between items-center" />
+                <ChatToolbar
+                    darkMode={darkMode}
+                    className="sticky top-0 w-full pt-2 px-4 min-h-14 flex justify-between items-center"
+                />
                 <ScrollShadow className="px-4 w-[56rem] h-full">
                     <ChatConversation messages={messages} />
                 </ScrollShadow>
