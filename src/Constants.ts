@@ -1,0 +1,1 @@
+export const CHAT_HISTORY_SESSION_ENTRY_LIMIT = 50;

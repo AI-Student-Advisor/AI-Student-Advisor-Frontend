@@ -1,23 +1,23 @@
-import { faPenFancy } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faPenFancy } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, ScrollShadow } from "@nextui-org/react";
+import { CHAT_HISTORY_SESSION_ENTRY_LIMIT } from "Constants.ts";
 import { sendMessage } from "api/Conversation.ts";
-import { fetchHistoryConversations } from "api/HistoryConversations.ts";
 import {
-    HistoryConversation,
+    deleteHistorySession,
+    fetchHistorySession,
+    renameHistorySession
+} from "api/HistorySession.ts";
+import { fetchHistorySessions } from "api/HistorySessions.ts";
+import {
+    Control,
+    HistorySession,
     Message,
-    UUID
-} from "api/interfaces/CommonStruct.ts";
-import {
-    PostResponseBase,
-    PostResponseControl,
-    PostResponseFail,
-    PostResponseMessage,
-    PostResponseSuccess
-} from "api/interfaces/Conversation.ts";
-import ChatConversation from "components/ChatConversation.tsx";
-import ChatConversationHistory from "components/ChatConversationHistory.tsx";
+    SessionId
+} from "api/interfaces/Common.ts";
 import ChatInput, { ChatInputStatus } from "components/ChatInput.tsx";
+import ChatSession from "components/ChatSession.tsx";
+import ChatSessionHistory from "components/ChatSessionHistory.tsx";
 import ChatToolbar from "components/ChatToolbar.tsx";
 import React, { useEffect, useRef, useState } from "react";
 import { useDarkMode } from "usehooks-ts";
@@ -29,18 +29,92 @@ export interface ChatProps extends React.ComponentProps<"div"> {
 export default function Chat({ darkMode, ...otherProps }: ChatProps) {
     const [inputStatus, setInputStatus] = useState<ChatInputStatus>("idle");
     const [inputValue, setInputValue] = useState("");
-    const [sessionId, setSessionId] = useState<UUID | undefined>(undefined);
-    const [historyConversations, setHistoryConversations] = useState<
-        HistoryConversation[]
-    >([]);
+    const [historySessions, setHistorySessions] = useState<HistorySession[]>(
+        []
+    );
     const [messages, setMessages] = useState<Message[]>([]);
+    const [loadingSessions, setLoadingSessions] = useState(true);
+    const [activeSessionId, setActiveSessionId] = useState<
+        SessionId | undefined
+    >(undefined);
+    const [activeSessionTitle, setActiveSessionTitle] =
+        useState<string>("New Chat");
     const generationController = useRef<AbortController>(new AbortController());
+    const chatSessionScrollComponent = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         void (async () => {
-            setHistoryConversations(await fetchHistoryConversations());
+            const sessions = await fetchHistorySessions({
+                offset: 0,
+                limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
+            });
+            setHistorySessions(sessions);
+            setLoadingSessions(false);
         })();
     }, []);
+
+    useEffect(() => {
+        const component = chatSessionScrollComponent.current;
+        if (component) {
+            component.scroll({
+                top: component.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+    }, [messages]);
+
+    async function handleLoadMore() {
+        setLoadingSessions(true);
+        try {
+            const sessions = await fetchHistorySessions({
+                offset: historySessions.length,
+                limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
+            });
+            setHistorySessions([...historySessions, ...sessions]);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingSessions(false);
+        }
+    }
+
+    function handleNewChat() {
+        setActiveSessionId(undefined);
+        setActiveSessionTitle("New Chat");
+        setMessages([]);
+    }
+
+    async function handleSelect(session: HistorySession) {
+        const messages = await fetchHistorySession({
+            id: session.id
+        });
+        setActiveSessionId(session.id);
+        setActiveSessionTitle(session.title);
+        setMessages(messages);
+    }
+
+    async function handleRename(session: HistorySession, newName: string) {
+        await renameHistorySession({ id: session.id, name: newName });
+        setHistorySessions((prevState) =>
+            prevState.map((value) => {
+                if (value.id === session.id) {
+                    value.title = newName;
+                }
+                return value;
+            })
+        );
+        if (session.id === activeSessionId) {
+            setActiveSessionTitle(newName);
+        }
+    }
+
+    async function handleDelete(session: HistorySession) {
+        await deleteHistorySession({ id: session.id });
+        setHistorySessions((prevState) =>
+            prevState.filter((value) => value.id !== session.id)
+        );
+        handleNewChat();
+    }
 
     function handleSendMessage(text: string) {
         setInputStatus("waiting");
@@ -48,7 +122,6 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
 
         const message: Message = {
             id: crypto.randomUUID(),
-            contentType: "text/plain",
             content: text,
             author: {
                 role: "user"
@@ -59,8 +132,9 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         setMessages((prevMessages) => [...prevMessages, message]);
 
         void sendMessage(
-            { id: sessionId, message: message },
-            handleResponse,
+            { id: activeSessionId, message: message },
+            handleMessage,
+            handleControl,
             generationController.current.signal
         ).catch((error) => {
             console.error(error);
@@ -68,45 +142,8 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         });
     }
 
-    function handleResponse(response: PostResponseBase) {
-        let errorString = "";
-
-        switch (response.status) {
-            case "success":
-                handleSuccessResponse(response as PostResponseSuccess);
-                break;
-            case "fail":
-                errorString = `Request failed: ${(response as PostResponseFail).reason}`;
-                console.error(errorString);
-                handleError(errorString);
-                break;
-            default:
-                errorString = `Unknown response status ${response.status}`;
-                console.error(errorString);
-                handleError(errorString);
-        }
-    }
-
-    function handleSuccessResponse(response: PostResponseSuccess) {
-        let errorString = "";
-
-        switch (response.type) {
-            case "message":
-                handleMessageResponse(response as PostResponseMessage);
-                break;
-            case "control":
-                handleControlResponse(response as PostResponseControl);
-                break;
-            default:
-                errorString = `Unknown response type ${response.type}`;
-                console.error(errorString);
-                handleError(errorString);
-        }
-    }
-
-    function handleMessageResponse(response: PostResponseMessage) {
-        const { id, message } = response;
-        setSessionId(id);
+    function handleMessage(id: SessionId, message: Message) {
+        setActiveSessionId(id);
 
         setMessages((prevMessages) => {
             /* eslint-disable no-magic-numbers */
@@ -121,8 +158,7 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         });
     }
 
-    function handleControlResponse(response: PostResponseControl) {
-        const { control } = response;
+    function handleControl(_: SessionId, control: Control) {
         let errorString = "";
 
         switch (control.signal) {
@@ -141,10 +177,6 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
                 console.error(errorString);
                 handleError(errorString);
                 break;
-            default:
-                errorString = `Unknown control signal: ${control.signal}`;
-                console.error(errorString);
-                handleError(errorString);
         }
     }
 
@@ -153,7 +185,6 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         // TODO: Need more user-friendly error prompt
         const message: Message = {
             id: crypto.randomUUID(),
-            contentType: "text/plain",
             content: error.toString(),
             author: {
                 role: "system"
@@ -177,24 +208,51 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
                     className="text-white text-lg font-bold w-full min-h-12"
                     size="lg"
                     startContent={<FontAwesomeIcon icon={faPenFancy} />}
+                    onPress={handleNewChat}
                 >
                     New Chat
                 </Button>
                 <div role="separator" className="py-3"></div>
                 <ScrollShadow className="h-full flex-1">
-                    <ChatConversationHistory
+                    <ChatSessionHistory
                         isDarkMode={darkMode.isDarkMode}
-                        historyConversations={historyConversations}
+                        historySessions={historySessions}
+                        onSelectSession={handleSelect}
+                        onRenameSession={handleRename}
+                        onDeleteSession={handleDelete}
+                        selectedSessionId={activeSessionId}
                     />
                 </ScrollShadow>
+                <div role="separator" className="py-3"></div>
+                <Button
+                    isLoading={loadingSessions}
+                    variant="solid"
+                    color="secondary"
+                    className="text-white text-lg font-bold w-full min-h-12"
+                    size="lg"
+                    startContent={
+                        loadingSessions ? (
+                            <></>
+                        ) : (
+                            <FontAwesomeIcon icon={faEllipsis} />
+                        )
+                    }
+                    onPress={handleLoadMore}
+                >
+                    {loadingSessions ? "Loading" : "Load More"}
+                </Button>
             </div>
             <div className="flex flex-col flex-1 items-center">
                 <ChatToolbar
                     darkMode={darkMode}
+                    title={activeSessionTitle}
                     className="sticky top-0 w-full pt-2 px-4 min-h-14 flex justify-between items-center"
                 />
-                <ScrollShadow className="px-4 w-[56rem] h-full">
-                    <ChatConversation messages={messages} />
+                <ScrollShadow
+                    ref={chatSessionScrollComponent}
+                    className="px-4 w-[56rem] h-full"
+                >
+                    <ChatSession messages={messages} />
                 </ScrollShadow>
                 <ChatInput
                     value={inputValue}

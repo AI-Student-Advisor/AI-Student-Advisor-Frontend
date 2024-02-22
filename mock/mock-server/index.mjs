@@ -1,28 +1,12 @@
 import express from "express";
+import cors from "cors";
+import { historyConversationMap, historyConversationMessageMap, responseWords } from "./data.mjs";
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const app = express();
-app.use(express.json())
-app.use((request, response, next) => {
-    response.setHeader("Access-Control-Allow-Origin", "*");
-    next();
-});
-
-const responseWords = "Hi, I'm the mock server. It's nice to meet you!"
-    .split(" ")
-    .flatMap((value, index, array) => {
-        if (index === array.length - 1) {
-            return value;
-        }
-        return [value, " "];
-    });
-
-app.options("/api/conversation", (request, response) => {
-    response.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    response.flushHeaders();
-    response.end();
-});
+app.use(express.json());
+app.use(cors());
 
 app.post("/api/conversation", async (request, response) => {
     const data = request.body;
@@ -58,7 +42,6 @@ app.post("/api/conversation", async (request, response) => {
         id: sessionId,
         message: {
             id: crypto.randomUUID(),
-            contentType: "text/plain",
             content: "",
             author: {
                 role: "assistant"
@@ -108,6 +91,60 @@ app.post("/api/conversation", async (request, response) => {
     response.on("close", () => {
         response.end();
     });
+});
+
+app.get("/api/history-sessions", (request, response) => {
+    const totalEntryCount = 300;
+    const maxLimit = 50;
+
+    // Since this is just a demo server, I skipped rigorous schema checks
+    // Implement this properly in real backend
+    const limit = parseInt(request.query.limit) > maxLimit ? maxLimit : parseInt(request.query.limit);
+    const offset = parseInt(request.query.offset);
+
+    response.write(JSON.stringify({
+        status: "success",
+        total: totalEntryCount,
+        limit: limit,
+        items: [...historyConversationMap.values()].slice(offset, offset + limit)
+    }));
+
+    response.end();
+});
+
+app.get("/api/history-session/:id", (request, response) => {
+    const id = request.params.id;
+
+    response.write(JSON.stringify({
+        status: "success",
+        messages: historyConversationMessageMap.get(id)
+    }));
+    response.end();
+});
+
+app.patch("/api/history-session/:id", (request, response) => {
+    const id = request.params.id;
+    const { name } = request.body;
+
+    const entry = historyConversationMap.get(id);
+    entry.title = name;
+
+    response.write(JSON.stringify({
+        status: "success"
+    }));
+    response.end();
+});
+
+app.delete("/api/history-session/:id", (request, response) => {
+    const id = request.params.id;
+
+    historyConversationMap.delete(id);
+    historyConversationMessageMap.delete(id);
+
+    response.write(JSON.stringify({
+        status: "success"
+    }));
+    response.end();
 });
 
 app.listen(3001);

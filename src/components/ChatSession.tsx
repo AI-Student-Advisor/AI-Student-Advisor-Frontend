@@ -5,17 +5,17 @@ import {
     CardHeader,
     Divider
 } from "@nextui-org/react";
-import { Message } from "api/interfaces/CommonStruct.ts";
+import { Message } from "api/interfaces/Common.ts";
 import React from "react";
 
-export interface ChatConversationProps extends React.ComponentProps<"div"> {
+export interface ChatSessionProps extends React.ComponentProps<"div"> {
     messages: Message[];
 }
 
-export default function ChatConversation({
+export default function ChatSession({
     messages,
     ...otherProps
-}: ChatConversationProps) {
+}: ChatSessionProps) {
     const context = "University of Ottawa";
     const introductionView = (
         <div className="flex w-full h-full justify-center items-center">
@@ -37,26 +37,22 @@ export default function ChatConversation({
         </div>
     );
 
-    const conversationView = messages.map((message, index) => (
+    const sessionView = messages.map((message, index) => (
         <Card key={index} className="my-4">
             <CardHeader className="font-semibold">
                 {message.author.role}
             </CardHeader>
             <Divider />
-            {message.contentType === "text/plain" ? (
-                <CardBody className="whitespace-pre-line">
-                    {message.content}
-                </CardBody>
-            ) : (
-                <></>
-            )}
+            <CardBody className="whitespace-pre-line">
+                {message.content}
+            </CardBody>
         </Card>
     ));
 
     return (
         <div className={messages.length ? "" : "h-full"} {...otherProps}>
             {/* eslint-disable-next-line no-magic-numbers */}
-            {messages.length === 0 ? introductionView : conversationView}
+            {messages.length === 0 ? introductionView : sessionView}
         </div>
     );
 }

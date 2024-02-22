@@ -8,81 +8,75 @@ import {
     DropdownItem,
     DropdownMenu,
     DropdownTrigger,
+    Input,
     Modal,
     ModalBody,
     ModalContent,
     ModalFooter,
     ModalHeader,
-    Input,
     useDisclosure
 } from "@nextui-org/react";
-import { HistoryConversation, UUID } from "api/interfaces/CommonStruct.ts";
+import { HistorySession, SessionId } from "api/interfaces/Common.ts";
 import React, { ReactElement, useEffect, useState } from "react";
+import { safeEvaluate } from "utils/Utils.tsx";
 
-export type OnSelectConversationCallback = (sessionId: UUID) => void;
-export type OnDeleteConversationCallback = (sessionId: UUID) => void;
-export type OnRenameConversationCallback = (
-    sessionId: UUID,
+export type OnSelectSessionCallback = (
+    session: HistorySession
+) => Promise<void>;
+export type OnDeleteSessionCallback = (
+    session: HistorySession
+) => Promise<void>;
+export type OnRenameSessionCallback = (
+    session: HistorySession,
     newName: string
-) => void;
+) => Promise<void>;
 
-export interface ChatConversationHistoryProps
-    extends React.ComponentProps<"div"> {
+export interface ChatSessionHistoryProps extends React.ComponentProps<"div"> {
     isDarkMode: boolean;
-    historyConversations: HistoryConversation[];
-    onSelectConversation?: OnSelectConversationCallback;
-    onDeleteConversation?: OnDeleteConversationCallback;
-    onRenameConversation?: OnRenameConversationCallback;
-    selectedSessionId?: UUID;
+    historySessions: HistorySession[];
+    onSelectSession?: OnSelectSessionCallback;
+    onDeleteSession?: OnDeleteSessionCallback;
+    onRenameSession?: OnRenameSessionCallback;
+    selectedSessionId?: SessionId;
 }
 
-export default function ChatConversationHistory({
+export default function ChatSessionHistory({
     isDarkMode,
-    historyConversations,
-    onSelectConversation,
-    onDeleteConversation,
-    onRenameConversation,
+    historySessions,
+    onSelectSession,
+    onDeleteSession,
+    onRenameSession,
     selectedSessionId,
     ...otherProps
-}: ChatConversationHistoryProps) {
-    const [conversationMapIdView, setConversationMapIdView] = useState(
-        new Map<string, HistoryConversation>()
-    );
-    const [conversationMapDateView, setConversationMapDateView] = useState(
-        new Map<string, HistoryConversation[]>()
+}: ChatSessionHistoryProps) {
+    const [SessionDateView, setSessionDateView] = useState(
+        new Map<string, HistorySession[]>()
     );
 
     useEffect(() => {
-        setConversationMapIdView(
-            historyConversations.reduce((map, entry) => {
-                map.set(entry.id, entry);
-                return map;
-            }, new Map<string, HistoryConversation>())
-        );
-    }, [historyConversations]);
-
-    useEffect(() => {
-        const conversations = Array.from(conversationMapIdView.values());
-        conversations.sort(
+        const sessions = [...historySessions];
+        sessions.sort(
             (a, b) =>
-                new Date(b.dateTimeIso).getTime() -
-                new Date(a.dateTimeIso).getTime()
+                new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
         );
-        setConversationMapDateView(
-            conversations.reduce((map, entry) => {
-                const date = new Date(entry.dateTimeIso);
+        setSessionDateView(
+            sessions.reduce((map, entry) => {
+                const date = new Date(entry.dateTime);
                 const localeDateString = date.toLocaleDateString();
                 if (!map.has(localeDateString)) {
                     map.set(localeDateString, []);
                 }
                 map.get(localeDateString)!.push(entry);
                 return map;
-            }, new Map<string, HistoryConversation[]>())
+            }, new Map<string, HistorySession[]>())
         );
-    }, [conversationMapIdView]);
+    }, [historySessions]);
 
-    const [modalTargetId, setModalTargetId] = useState<UUID>();
+    const [modalTargetSession, setModalTargetSession] =
+        useState<HistorySession>();
     const [renameModalInputValue, setRenameModalInputValue] = useState("");
+    const [renameInProgress, setRenameInProgress] = useState(false);
+    const [deleteInProgress, setDeleteInProgress] = useState(false);
     const {
         isOpen: isRenameModalOpen,
         onOpen: openRenameModal,
@@ -95,23 +89,20 @@ export default function ChatConversationHistory({
         onOpenChange: onDeleteModalOpenChange
     } = useDisclosure();
 
-    function createOnSelectHandler(id: UUID) {
-        return () => {
-            if (onSelectConversation) {
-                onSelectConversation(id);
-            }
-        };
+    function createOnSelectHandler(session: HistorySession) {
+        return () => safeEvaluate(onSelectSession, [session]);
     }
 
-    function createOnDropdownActionHandler(id: UUID) {
+    function createOnDropdownActionHandler(session: HistorySession) {
         return (key: React.Key) => {
             switch (key as string) {
                 case "rename":
-                    setModalTargetId(id);
+                    setModalTargetSession(session);
+                    setRenameModalInputValue("");
                     openRenameModal();
                     break;
                 case "delete":
-                    setModalTargetId(id);
+                    setModalTargetSession(session);
                     openDeleteModal();
                     break;
             }
@@ -119,40 +110,56 @@ export default function ChatConversationHistory({
     }
 
     const accordionItems: ReactElement[] = [];
-    conversationMapDateView.forEach((value, key) => {
+    SessionDateView.forEach((value, key) => {
         accordionItems.push(
             <AccordionItem title={key}>
-                <ConversationList key={key}>
+                <SessionList key={key}>
                     {value.map((value) => (
-                        <ConversationEntry
+                        <SessionEntry
                             isDarkMode={isDarkMode}
                             key={value.id}
-                            onSelect={createOnSelectHandler(value.id)}
+                            onSelect={createOnSelectHandler(value)}
                             onDropdownAction={createOnDropdownActionHandler(
-                                value.id
+                                value
                             )}
                             selected={selectedSessionId === value.id}
                         >
                             {value.title}
-                        </ConversationEntry>
+                        </SessionEntry>
                     ))}
-                </ConversationList>
+                </SessionList>
             </AccordionItem>
         );
     });
 
-    function handlePressRenameModalButton(onClose: () => void) {
-        if (onRenameConversation && renameModalInputValue && modalTargetId) {
-            onRenameConversation(modalTargetId, renameModalInputValue);
+    async function handlePressRenameModalButton(onClose: () => void) {
+        if (!onRenameSession || !renameModalInputValue || !modalTargetSession) {
+            return;
+        }
+
+        setRenameInProgress(true);
+        try {
+            await onRenameSession(
+                modalTargetSession,
+                renameModalInputValue.trim()
+            );
             onClose();
-            setRenameModalInputValue("");
+        } finally {
+            setRenameInProgress(false);
         }
     }
 
-    function handlePressDeleteModalButton(onClose: () => void) {
-        if (onDeleteConversation && modalTargetId) {
-            onDeleteConversation(modalTargetId);
+    async function handlePressDeleteModalButton(onClose: () => void) {
+        if (!onDeleteSession || !modalTargetSession) {
+            return;
+        }
+
+        setDeleteInProgress(true);
+        try {
+            await onDeleteSession(modalTargetSession);
             onClose();
+        } finally {
+            setDeleteInProgress(false);
         }
     }
 
@@ -170,7 +177,7 @@ export default function ChatConversationHistory({
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">
-                                Rename the conversation to...
+                                Rename the session to...
                             </ModalHeader>
                             <ModalBody>
                                 <Input
@@ -181,6 +188,7 @@ export default function ChatConversationHistory({
                             <ModalFooter>
                                 <Button onPress={onClose}>Close</Button>
                                 <Button
+                                    isLoading={renameInProgress}
                                     isDisabled={
                                         renameModalInputValue.trim() === ""
                                     }
@@ -207,11 +215,12 @@ export default function ChatConversationHistory({
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">
-                                Delete the conversation?
+                                Delete the session?
                             </ModalHeader>
                             <ModalFooter>
                                 <Button onPress={onClose}>Close</Button>
                                 <Button
+                                    isLoading={deleteInProgress}
                                     color="danger"
                                     onPress={() =>
                                         handlePressDeleteModalButton(onClose)
@@ -228,27 +237,27 @@ export default function ChatConversationHistory({
     );
 }
 
-interface ConversationListProps extends React.ComponentProps<"ul"> {}
+interface SessionListProps extends React.ComponentProps<"ul"> {}
 
-function ConversationList({ children, ...otherProps }: ConversationListProps) {
+function SessionList({ children, ...otherProps }: SessionListProps) {
     return children ? <ul {...otherProps}>{children}</ul> : <></>;
 }
 
-interface ConversationEntryProps extends React.ComponentProps<"li"> {
+interface SessionEntryProps extends React.ComponentProps<"li"> {
     isDarkMode: boolean;
     selected?: boolean;
     onSelect?: () => void;
     onDropdownAction?: (key: React.Key) => void;
 }
 
-function ConversationEntry({
+function SessionEntry({
     isDarkMode,
     selected,
     onSelect,
     onDropdownAction,
     children,
     ...otherProps
-}: ConversationEntryProps) {
+}: SessionEntryProps) {
     return (
         <li
             className={`

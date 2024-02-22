@@ -33,7 +33,6 @@ pnpm build
 pnpm lint
 ```
 
-
 ### Format
 
 ```shell
@@ -41,4 +40,5 @@ pnpm format
 ```
 
 ## Note
+
 Lint and format before pushing.

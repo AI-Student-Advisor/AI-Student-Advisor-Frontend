@@ -26,7 +26,7 @@ export default function ChatInput({
 }: ChatInputProps) {
     const [isInputEmpty, setIsInputEmpty] = useState(true);
 
-    function buttonClickHandler() {
+    function handlePressButton() {
         if (onSendMessage && status === "idle") {
             onSendMessage(value);
         }
@@ -56,7 +56,7 @@ export default function ChatInput({
             <Button
                 isIconOnly
                 className="text-base text-white"
-                onClick={buttonClickHandler}
+                onPress={handlePressButton}
                 color="primary"
                 variant="solid"
                 isDisabled={

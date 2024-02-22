@@ -1,21 +1,25 @@
-import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { Control, Message, SessionId } from "./interfaces/Common.ts";
+import { PostRequest } from "./interfaces/Conversation.ts";
 import {
-    PostRequest,
-    PostResponseFail,
-    PostResponseSuccess
-} from "api/interfaces/Conversation.ts";
+    PostRequestSchema,
+    PostResponseSchema
+} from "./schemas/Conversation.ts";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { safeEvaluate } from "utils/Utils.tsx";
 
-type OnResponseCallback = (
-    response: PostResponseFail | PostResponseSuccess
-) => void;
+type OnMessageCallback = (id: SessionId, message: Message) => void;
+type OnControlCallback = (id: SessionId, control: Control) => void;
 
 const apiEndpoint = "/api/conversation";
 
 export async function sendMessage(
     request: PostRequest,
-    onResponse?: OnResponseCallback,
+    onMessage?: OnMessageCallback,
+    onControl?: OnControlCallback,
     signal?: AbortSignal
 ) {
+    const parsedRequest = PostRequestSchema.parse(request);
+
     await fetchEventSource(`${import.meta.env.VITE_API_ROOT}${apiEndpoint}`, {
         method: "POST",
         headers: {
@@ -23,7 +27,7 @@ export async function sendMessage(
         },
         signal: signal,
         openWhenHidden: true,
-        body: JSON.stringify(request),
+        body: JSON.stringify(parsedRequest),
         async onopen(response) {
             const contentType = response.headers.get("Content-Type");
             if (!contentType) {
@@ -51,8 +55,30 @@ export async function sendMessage(
         },
         onmessage(event) {
             const { data } = event;
-            if (data && onResponse) {
-                onResponse(JSON.parse(data));
+            if (!data) {
+                return;
+            }
+
+            const response = PostResponseSchema.parse(JSON.parse(data));
+            switch (response.status) {
+                case "success":
+                    switch (response.type) {
+                        case "message":
+                            safeEvaluate(onMessage, [
+                                response.id,
+                                response.message
+                            ]);
+                            break;
+                        case "control":
+                            safeEvaluate(onControl, [
+                                response.id,
+                                response.control
+                            ]);
+                            break;
+                    }
+                    break;
+                case "fail":
+                    throw new Error(response.reason);
             }
         }
     });
