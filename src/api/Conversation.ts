@@ -5,12 +5,12 @@ import {
     PostResponseSchema
 } from "./schemas/Conversation.ts";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { safeEvaluate } from "utils/Utils.tsx";
+import { safeEvaluate } from "utils/Utils.ts";
 
 type OnMessageCallback = (id: SessionId, message: Message) => void;
 type OnControlCallback = (id: SessionId, control: Control) => void;
 
-const apiEndpoint = "/api/conversation";
+const endpoint = "/api/conversation";
 
 export async function sendMessage(
     request: PostRequest,
@@ -20,7 +20,7 @@ export async function sendMessage(
 ) {
     const parsedRequest = PostRequestSchema.parse(request);
 
-    await fetchEventSource(`${import.meta.env.VITE_API_ROOT}${apiEndpoint}`, {
+    await fetchEventSource(`${import.meta.env.VITE_API_ROOT}${endpoint}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

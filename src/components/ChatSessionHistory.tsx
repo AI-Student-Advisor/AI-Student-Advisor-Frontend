@@ -18,7 +18,7 @@ import {
 } from "@nextui-org/react";
 import { HistorySession, SessionId } from "api/interfaces/Common.ts";
 import React, { ReactElement, useEffect, useState } from "react";
-import { safeEvaluate } from "utils/Utils.tsx";
+import { safeEvaluate } from "utils/Utils.ts";
 
 export type OnSelectSessionCallback = (
     session: HistorySession

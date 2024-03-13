@@ -11,15 +11,15 @@ import {
     PatchRequestSchema,
     PatchResponseSchema
 } from "./schemas/HistorySession.ts";
-import { toQueryString } from "utils/Utils.tsx";
+import { toQueryString } from "utils/Utils.ts";
 
-const apiEndpoint = "/api/history-session";
+const endpoint = "/api/history-session";
 
 export async function fetchHistorySession(request: GetRequest) {
     const { id, ...parsedRequest } = GetRequestSchema.parse(request);
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ROOT}${apiEndpoint}/${id}${toQueryString(parsedRequest, true)}`
+        `${import.meta.env.VITE_API_ROOT}${endpoint}/${id}${toQueryString(parsedRequest, true)}`
     );
     const data = GetResponseSchema.parse(await response.json());
 
@@ -38,7 +38,7 @@ export async function renameHistorySession(request: PatchRequest) {
     const { id, ...parsedRequest } = PatchRequestSchema.parse(request);
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ROOT}${apiEndpoint}/${id}`,
+        `${import.meta.env.VITE_API_ROOT}${endpoint}/${id}`,
         {
             method: "PATCH",
             headers: {
@@ -61,7 +61,7 @@ export async function deleteHistorySession(request: DeleteRequest) {
     const { id, ...parsedRequest } = DeleteRequestSchema.parse(request);
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ROOT}${apiEndpoint}/${id}`,
+        `${import.meta.env.VITE_API_ROOT}${endpoint}/${id}`,
         {
             method: "DELETE",
             headers: {

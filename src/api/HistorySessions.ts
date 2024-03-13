@@ -4,9 +4,9 @@ import {
     GetRequestSchema,
     GetResponseSchema
 } from "./schemas/HistorySessions.ts";
-import { toQueryString } from "utils/Utils.tsx";
+import { toQueryString } from "utils/Utils.ts";
 
-const apiEndpoint = "/api/history-sessions";
+const endpoint = "/api/history-sessions";
 
 export async function fetchHistorySessions(
     request: GetRequest
@@ -14,7 +14,7 @@ export async function fetchHistorySessions(
     const parsedRequest = GetRequestSchema.parse(request);
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ROOT}${apiEndpoint}${toQueryString(parsedRequest, true)}`
+        `${import.meta.env.VITE_API_ROOT}${endpoint}${toQueryString(parsedRequest, true)}`
     );
     const data = GetResponseSchema.parse(await response.json());
 
