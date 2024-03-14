@@ -3,7 +3,7 @@ import {
     GetUserRequestSchema,
     GetUserResponseSchema
 } from "./schemas/LoginSession.ts";
-import { toQueryString } from "utils/Utils.tsx";
+import { toQueryString } from "utils/Utils.ts";
 
 const apiEndpoint = "/api/login";
 
