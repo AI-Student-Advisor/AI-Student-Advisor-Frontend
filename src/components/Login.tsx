@@ -1,17 +1,23 @@
 import { MSG_TYPE } from "../Constants";
 import ResponseMsg from "./ResponseMsg";
+import {
+    Button,
+    Input,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader
+} from "@nextui-org/react";
 import { fetchUserSession } from "api/LoginSession";
 import { signUpUserSession } from "api/SignUpSession";
 import { GetUserRequestSchema } from "api/schemas/LoginSession";
 import { PostUserRequestSchema } from "api/schemas/SignUpSession";
 import { useState } from "react";
-import { Modal } from "react-bootstrap";
 
 interface loginProps {
     show: boolean;
     componentId: string;
-    isLogin: boolean;
-    setIsLogin: React.Dispatch<React.SetStateAction<boolean>>;
     onHide: React.Dispatch<React.SetStateAction<boolean>>;
     setUser: React.Dispatch<React.SetStateAction<string>>;
 }
@@ -19,8 +25,6 @@ interface loginProps {
 export default function LoginModal({
     show,
     componentId,
-    isLogin,
-    setIsLogin,
     onHide,
     setUser
 }: loginProps) {
@@ -29,7 +33,17 @@ export default function LoginModal({
     const [pwd2, setPwd2] = useState("");
     const [message, setMessage] = useState("");
     const [messageType, setMessageType] = useState(MSG_TYPE.Unknown);
-    const [isLock, setIsLock] = useState(false);
+
+    //Check whether it is in login page or sign up page.
+    const [isLogin, setIsLogin] = useState(true);
+
+    function submitFormWithEnter(
+        e: KeyboardEvent | React.KeyboardEvent<HTMLInputElement>
+    ) {
+        if (e.key === "Enter") {
+            handleSubmitForm(isLogin);
+        }
+    }
 
     function handleSubmitForm(isLogin: boolean) {
         if (isLogin) {
@@ -60,7 +74,6 @@ export default function LoginModal({
             const result = await signUpUserSession(request);
             if (result.status === "success") {
                 printMessage("Welcome! ".concat(username), MSG_TYPE.Success);
-                setIsLock(true);
                 setUser(username);
             } else if (result.status === "fail") {
                 printMessage(result.reason, MSG_TYPE.Error);
@@ -76,7 +89,6 @@ export default function LoginModal({
         const result = await fetchUserSession(request);
         if (result.status === "success") {
             printMessage("Welcome back! ".concat(username), MSG_TYPE.Success);
-            setIsLock(true);
             setUser(username);
         } else if (result.status === "fail") {
             printMessage(result.reason, MSG_TYPE.Error);
@@ -97,99 +109,92 @@ export default function LoginModal({
         setMessageType(messageType);
     }
 
+    function closeModal() {
+        onHide(false);
+        setIsLogin(true);
+        clearForm();
+    }
+
     return (
-        <Modal
-            show={show}
-            onHide={() => (
-                onHide(false), setIsLogin(true), clearForm(), setIsLock(false)
-            )}
-            id={componentId}
-            size="lg"
-            centered
-        >
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    {isLogin === true ? "Login" : "Sign up"}
-                    <br></br>
-                    <small>to continue to your AI Advisor</small>
-                </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <form>
-                    <label htmlFor="username">Input your username:</label>
-                    <div className="input-group mb-3">
-                        <input
-                            type="text"
-                            className="form-control"
+        <>
+            <Modal
+                isOpen={show}
+                onOpenChange={() => closeModal()}
+                id={componentId}
+                size="lg"
+                placement="center"
+                backdrop="blur"
+            >
+                <ModalContent>
+                    <ModalHeader className="flex flex-col gap-1">
+                        {isLogin === true ? "Login" : "Sign up"}
+                        <br></br>
+                        <small>to continue to your AI Advisor</small>
+                    </ModalHeader>
+                    <ModalBody>
+                        <Input
+                            autoFocus
+                            label="Email"
                             placeholder="Enter your username"
+                            variant="bordered"
                             id="username"
                             onChange={(e: React.FormEvent<HTMLInputElement>) =>
                                 setUsername(e.currentTarget.value)
                             }
-                            disabled={isLock}
-                        ></input>
-                    </div>
-                    <label htmlFor="password">Input your password:</label>
-                    <div className="input-group mb-3">
-                        <input
-                            type="password"
-                            className="form-control"
+                            onKeyDown={(e) => submitFormWithEnter(e)}
+                        ></Input>
+                        <Input
+                            label="Password"
                             placeholder="Enter your password"
+                            type="password"
+                            variant="bordered"
                             id="password"
                             onChange={(e: React.FormEvent<HTMLInputElement>) =>
                                 setPwd1(e.currentTarget.value)
                             }
-                            disabled={isLock}
-                        ></input>
-                    </div>
-                    {!isLogin && (
-                        <div>
-                            <label htmlFor="password2">
-                                Confirm your password:
-                            </label>
-                            <div className="input-group mb-3">
-                                <input
-                                    type="password"
-                                    className="form-control"
-                                    placeholder="Repeat your password"
-                                    id="password2"
-                                    onChange={(
-                                        e: React.FormEvent<HTMLInputElement>
-                                    ) => setPwd2(e.currentTarget.value)}
-                                    disabled={isLock}
-                                ></input>
-                            </div>
-                        </div>
-                    )}
-                </form>
-                <div className="flex justify-between">
-                    <button
-                        className="btn btn-primary"
-                        onClick={() =>
-                            isLogin ? setIsLogin(false) : setIsLogin(true)
-                        }
-                        disabled={isLock}
-                    >
-                        {isLogin ? "Create account" : "Sign in"}
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => handleSubmitForm(isLogin)}
-                        disabled={isLock}
-                    >
-                        {isLogin ? "Sign in" : "Sign up"}
-                    </button>
-                </div>
-            </Modal.Body>
-            <Modal.Footer>
-                <div className="col-12">
-                    <ResponseMsg
-                        type={messageType}
-                        content={message}
-                        setMessage={setMessage}
-                    ></ResponseMsg>
-                </div>
-            </Modal.Footer>
-        </Modal>
+                            onKeyDown={(e) => submitFormWithEnter(e)}
+                        ></Input>
+
+                        {!isLogin && (
+                            <Input
+                                label="password2"
+                                placeholder="Confirm your password"
+                                type="password"
+                                variant="bordered"
+                                id="password2"
+                                onChange={(
+                                    e: React.FormEvent<HTMLInputElement>
+                                ) => setPwd2(e.currentTarget.value)}
+                                onKeyDown={(e) => submitFormWithEnter(e)}
+                            ></Input>
+                        )}
+                    </ModalBody>
+                    <ModalFooter className="justify-between">
+                        <Button
+                            color="danger"
+                            onPress={() =>
+                                isLogin ? setIsLogin(false) : setIsLogin(true)
+                            }
+                            variant="light"
+                        >
+                            {isLogin ? "Create account" : "Use signed Account"}
+                        </Button>
+                        <Button
+                            color="danger"
+                            onPress={() => handleSubmitForm(isLogin)}
+                        >
+                            {isLogin ? "Sign in" : "Sign up"}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            <ResponseMsg
+                type={messageType}
+                content={message}
+                setMessage={setMessage}
+                handler={closeModal}
+            ></ResponseMsg>
+        </>
     );
 }

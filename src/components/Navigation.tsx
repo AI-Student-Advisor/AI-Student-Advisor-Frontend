@@ -1,9 +1,20 @@
-import "../css/Navigation.css";
-import "bootstrap/dist/css/bootstrap.css";
-import { Button, Dropdown, DropdownButton } from "react-bootstrap";
-import Container from "react-bootstrap/Container";
-import Nav from "react-bootstrap/Nav";
-import Navbar from "react-bootstrap/Navbar";
+import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    Navbar,
+    NavbarBrand,
+    NavbarContent,
+    NavbarItem,
+    Link,
+    Button,
+    Switch,
+    Dropdown,
+    DropdownTrigger,
+    DropdownMenu,
+    DropdownItem
+} from "@nextui-org/react";
+import { useNavigate } from "react-router-dom";
+import { useDarkMode } from "usehooks-ts";
 
 interface loginProps {
     userID: string;
@@ -11,6 +22,7 @@ interface loginProps {
     setUserID: React.Dispatch<React.SetStateAction<string>>;
     setIsOpenModal: React.Dispatch<React.SetStateAction<boolean>>;
     setSessions: React.Dispatch<React.SetStateAction<never[]>>;
+    darkMode: ReturnType<typeof useDarkMode>;
 }
 
 export default function NavbarComponent({
@@ -18,8 +30,10 @@ export default function NavbarComponent({
     setIsOpenModal,
     sessions,
     setSessions,
-    setUserID
+    setUserID,
+    darkMode
 }: loginProps) {
+    const navigate = useNavigate();
     function logOut() {
         setUserID("");
         setSessions([]);
@@ -29,53 +43,100 @@ export default function NavbarComponent({
     function test() {
         console.log(sessions);
     }
+
+    function handleClickAdvisor() {
+        if (userID !== "") {
+            navigate("/Chat");
+        } else {
+            setIsOpenModal(true);
+        }
+    }
+
     return (
-        <>
-            <Navbar
-                className="bg-body-tertiary"
-                variant="dark"
-                bg="dark"
-                data-bs-theme="dark"
-                expand="lg"
-            >
-                <Container fluid>
-                    <Navbar.Brand>AI Student Advisor</Navbar.Brand>
-                    <Nav className="me-auto">
-                        <Nav.Link href="\Chat" onClick={() => test()}>
-                            Home
-                        </Nav.Link>
-                        <Nav.Link href="">About</Nav.Link>
-                        <Nav.Link href="">Q&A</Nav.Link>
-                    </Nav>
-                </Container>
-                <Nav>
-                    {userID === "" && (
-                        <Button
-                            variant="outline-light"
-                            data-bs-toggle="modal"
-                            data-bs-target="#loginModal"
-                            onClick={() => {
-                                setIsOpenModal(true);
-                            }}
+        <Navbar
+            className={darkMode.isDarkMode ? "bg-deepBlue" : "bg-midBlue"}
+            shouldHideOnScroll
+        >
+            <NavbarBrand>
+                <p className="font-bold text-inherit">AI Student Advisor</p>
+            </NavbarBrand>
+            <NavbarContent className="hidden sm:flex gap-4" justify="start">
+                <NavbarItem isActive>
+                    <Link
+                        isBlock
+                        href="\"
+                        aria-current="page"
+                        underline="always"
+                    >
+                        Home
+                    </Link>
+                </NavbarItem>
+                <NavbarItem>
+                    <Link
+                        isBlock
+                        color="foreground"
+                        onClick={handleClickAdvisor}
+                        // eslint-disable-next-line no-magic-numbers
+                        href={void 0}
+                    >
+                        Advisor
+                    </Link>
+                </NavbarItem>
+                <NavbarItem>
+                    <Link isBlock color="foreground" href="\">
+                        About
+                    </Link>
+                </NavbarItem>
+            </NavbarContent>
+            <NavbarContent justify="end">
+                {userID === "" && (
+                    <Button
+                        className="hidden lg:flex"
+                        variant="flat"
+                        color="primary"
+                        onClick={() => setIsOpenModal(true)}
+                    >
+                        Login
+                    </Button>
+                )}
+                {userID !== "" && (
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <Button
+                                color="primary"
+                                variant="light"
+                                className="capitalize"
+                            >
+                                Welcome! {userID}
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            aria-label="Dropdown Variants"
+                            color="primary"
+                            variant="light"
                         >
-                            Login
-                        </Button>
-                    )}
-                    {userID !== "" && (
-                        <DropdownButton
-                            id="dropdown-button-dark-example2"
-                            variant="secondary"
-                            title={"Welcome ".concat(userID)}
-                            className="mt-2"
-                            data-bs-theme="dark"
-                        >
-                            <Dropdown.Item onClick={() => logOut()} active>
+                            <DropdownItem onClick={() => logOut()}>
                                 Log out
-                            </Dropdown.Item>
-                        </DropdownButton>
-                    )}
-                </Nav>
-            </Navbar>
-        </>
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                )}
+
+                <NavbarItem>
+                    <Switch
+                        isSelected={!darkMode.isDarkMode}
+                        onValueChange={darkMode.toggle}
+                        thumbIcon={(props) =>
+                            props.isSelected ? (
+                                <FontAwesomeIcon icon={faSun} />
+                            ) : (
+                                <></>
+                            )
+                        }
+                        endContent={<FontAwesomeIcon icon={faMoon} />}
+                    ></Switch>
+                </NavbarItem>
+            </NavbarContent>
+        </Navbar>
     );
 }

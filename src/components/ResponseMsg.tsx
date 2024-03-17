@@ -1,26 +1,33 @@
 import { MSG_TYPE } from "../Constants";
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react";
 
 interface ResponseMsgProps {
     type: MSG_TYPE;
     content: string;
     setMessage: React.Dispatch<React.SetStateAction<string>>;
+    handler?: () => void;
 }
 
 export default function ResponseMsg({
     type,
     content,
-    setMessage
+    setMessage,
+    handler
 }: ResponseMsgProps) {
-    let messageClass = "";
+    let fontColor = "";
+    let title = "";
     switch (type) {
         case MSG_TYPE.Info:
-            messageClass = "alert-info";
+            fontColor = "text-primary";
+            title = "Notice";
             break;
         case MSG_TYPE.Success:
-            messageClass = "alert-success";
+            fontColor = "text-success";
+            title = "Success";
             break;
         case MSG_TYPE.Error:
-            messageClass = "alert-danger";
+            fontColor = "text-danger";
+            title = "Error";
             break;
         default:
             return <></>;
@@ -28,16 +35,20 @@ export default function ResponseMsg({
     if (content === "") {
         return <div></div>;
     }
-
-    const classNameStr = `alert alert-dismissible fade show ${messageClass}`;
     return (
-        <div className={classNameStr}>
-            {content}
-            <button
-                className="btn-close"
-                data-bs-dismiss="alert"
-                onClick={() => setMessage("")}
-            ></button>
-        </div>
+        <Modal
+            isOpen={content !== ""}
+            onOpenChange={() => (
+                setMessage(""),
+                type === MSG_TYPE.Success && handler && handler()
+            )}
+        >
+            <ModalContent>
+                <ModalHeader className={`flex flex-col gap-1 ${fontColor}`}>
+                    {title}
+                </ModalHeader>
+                <ModalBody>{content}</ModalBody>
+            </ModalContent>
+        </Modal>
     );
 }

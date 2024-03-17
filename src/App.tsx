@@ -1,10 +1,12 @@
 import Chat from "./pages/Chat.tsx";
 import Landing from "pages/Landing";
+import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useDarkMode } from "usehooks-ts";
 
 export default function App() {
     const darkMode = useDarkMode();
+    const [userID, setUserID] = useState("");
     return (
         <div
             className={`${darkMode.isDarkMode ? "dark" : ""} text-foreground bg-background full-screen`}
@@ -16,12 +18,20 @@ export default function App() {
              *
              *  Here I pass down the global dark mode state for the children
              *  that may go outside the root container, e.g. modals and menus
-             * 
-                <Chat darkMode={darkMode} />
+             *
              */}
             <BrowserRouter>
                 <Routes>
-                    <Route path="/" element={<Landing></Landing>}></Route>
+                    <Route
+                        path="/"
+                        element={
+                            <Landing
+                                darkMode={darkMode}
+                                userID={userID}
+                                setUserID={setUserID}
+                            ></Landing>
+                        }
+                    ></Route>
                     <Route
                         path="/Chat"
                         element={<Chat darkMode={darkMode}></Chat>}
