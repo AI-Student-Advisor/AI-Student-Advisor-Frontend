@@ -18,30 +18,20 @@ import { useDarkMode } from "usehooks-ts";
 
 interface loginProps {
     userID: string;
-    sessions: string[];
     setUserID: React.Dispatch<React.SetStateAction<string>>;
     setIsOpenModal: React.Dispatch<React.SetStateAction<boolean>>;
-    setSessions: React.Dispatch<React.SetStateAction<never[]>>;
     darkMode: ReturnType<typeof useDarkMode>;
 }
 
 export default function NavbarComponent({
     userID,
     setIsOpenModal,
-    sessions,
-    setSessions,
     setUserID,
     darkMode
 }: loginProps) {
     const navigate = useNavigate();
     function logOut() {
         setUserID("");
-        setSessions([]);
-    }
-
-    //Handle Loading Chat history with user sessions
-    function test() {
-        console.log(sessions);
     }
 
     function handleClickAdvisor() {

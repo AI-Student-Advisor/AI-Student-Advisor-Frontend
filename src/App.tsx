@@ -34,7 +34,9 @@ export default function App() {
                     ></Route>
                     <Route
                         path="/Chat"
-                        element={<Chat darkMode={darkMode}></Chat>}
+                        element={
+                            <Chat darkMode={darkMode} userID={userID}></Chat>
+                        }
                     ></Route>
                 </Routes>
             </BrowserRouter>

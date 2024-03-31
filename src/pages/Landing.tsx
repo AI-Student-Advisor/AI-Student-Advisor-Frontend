@@ -12,7 +12,6 @@ interface LandingProps extends React.ComponentProps<"div"> {
 
 export default function Landing({ darkMode, userID, setUserID }: LandingProps) {
     const [showModal, setModal] = useState(false);
-    const [sessions, setSessions] = useState([]);
 
     return (
         <>
@@ -20,8 +19,6 @@ export default function Landing({ darkMode, userID, setUserID }: LandingProps) {
                 userID={userID}
                 setUserID={setUserID}
                 setIsOpenModal={setModal}
-                sessions={sessions}
-                setSessions={setSessions}
                 darkMode={darkMode}
             ></NavbarComponent>
             <header

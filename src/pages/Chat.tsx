@@ -24,9 +24,10 @@ import { useDarkMode } from "usehooks-ts";
 
 export interface ChatProps extends React.ComponentProps<"div"> {
     darkMode: ReturnType<typeof useDarkMode>;
+    userID: string;
 }
 
-export default function Chat({ darkMode, ...otherProps }: ChatProps) {
+export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
     const [inputStatus, setInputStatus] = useState<ChatInputStatus>("idle");
     const [inputValue, setInputValue] = useState("");
     const [historySessions, setHistorySessions] = useState<HistorySession[]>(
@@ -45,6 +46,7 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
     useEffect(() => {
         void (async () => {
             const sessions = await fetchHistorySessions({
+                username: userID,
                 offset: 0,
                 limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
             });
@@ -67,6 +69,7 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         setLoadingSessions(true);
         try {
             const sessions = await fetchHistorySessions({
+                username: userID,
                 offset: historySessions.length,
                 limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
             });
@@ -108,8 +111,8 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         }
     }
 
-    async function handleDelete(session: HistorySession) {
-        await deleteHistorySession({ id: session.id });
+    async function handleDelete(session: HistorySession, username: string) {
+        await deleteHistorySession({ id: session.id, username: username });
         setHistorySessions((prevState) =>
             prevState.filter((value) => value.id !== session.id)
         );
@@ -132,7 +135,7 @@ export default function Chat({ darkMode, ...otherProps }: ChatProps) {
         setMessages((prevMessages) => [...prevMessages, message]);
 
         void sendMessage(
-            { id: activeSessionId, message: message },
+            { id: activeSessionId, username: userID, message: message },
             handleMessage,
             handleControl,
             generationController.current.signal

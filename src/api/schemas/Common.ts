@@ -11,6 +11,7 @@ export const MessageSchema = z.object({
      * Message ID. Should uniquely identify a single message.
      */
     id: MessageIdSchema,
+
     // eslint-disable-next-line no-magic-numbers
     content: z.string().trim().min(1),
     /**
