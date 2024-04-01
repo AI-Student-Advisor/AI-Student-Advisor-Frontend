@@ -1,5 +1,4 @@
-import { MSG_TYPE } from "../Constants";
-import ResponseMsg from "./ResponseMsg";
+import LandingLoginResponseDialog from "./LandingLoginResponseDialog.tsx";
 import {
     Button,
     Input,
@@ -13,47 +12,54 @@ import { fetchUserSession } from "api/LoginSession";
 import { signUpUserSession } from "api/SignUpSession";
 import { GetUserRequestSchema } from "api/schemas/LoginSession";
 import { PostUserRequestSchema } from "api/schemas/SignUpSession";
-import { useState } from "react";
+import React, { useState } from "react";
 
-interface loginProps {
+interface LandingLoginModalProps {
     show: boolean;
     componentId: string;
     onHide: React.Dispatch<React.SetStateAction<boolean>>;
     setUser: React.Dispatch<React.SetStateAction<string>>;
+    isDarkMode: boolean;
 }
 
-export default function LoginModal({
+export type LandingLoginModalMessageType =
+    | "info"
+    | "success"
+    | "error"
+    | "unknown";
+
+export default function LandingLoginModal({
     show,
     componentId,
     onHide,
-    setUser
-}: loginProps) {
+    setUser,
+    isDarkMode,
+    ...otherProps
+}: LandingLoginModalProps) {
     const [username, setUsername] = useState("");
     const [pwd1, setPwd1] = useState("");
     const [pwd2, setPwd2] = useState("");
     const [message, setMessage] = useState("");
-    const [messageType, setMessageType] = useState(MSG_TYPE.Unknown);
+    const [messageType, setMessageType] =
+        useState<LandingLoginModalMessageType>("unknown");
 
-    //Check whether it is in login page or sign up page.
+    // Check whether it is in login page or sign up page
     const [isLogin, setIsLogin] = useState(true);
 
-    function submitFormWithEnter(
+    async function submitFormWithEnter(
         e: KeyboardEvent | React.KeyboardEvent<HTMLInputElement>
     ) {
         if (e.key === "Enter") {
-            handleSubmitForm(isLogin);
+            await handleSubmitForm(isLogin);
         }
     }
 
-    function handleSubmitForm(isLogin: boolean) {
+    async function handleSubmitForm(isLogin: boolean) {
         if (isLogin) {
-            handleUserLogin(username, pwd1);
+            await handleUserLogin(username, pwd1);
         } else {
-            handleUserSignUp(username, pwd1, pwd2);
+            await handleUserSignUp(username, pwd1, pwd2);
         }
-        console.log("User: ", { username }, "\nPwd1: ", { pwd1 }, "\nPwd2: ", {
-            pwd2
-        });
     }
 
     async function handleUserSignUp(
@@ -62,9 +68,9 @@ export default function LoginModal({
         pwd2: string
     ) {
         if (pwd1 !== pwd2) {
-            printMessage(
-                "your passwords are inconsistent. Please try again",
-                MSG_TYPE.Info
+            setModalMessage(
+                "Your passwords are inconsistent. Please try again.",
+                "info"
             );
         } else {
             const request = PostUserRequestSchema.parse({
@@ -73,10 +79,10 @@ export default function LoginModal({
             });
             const result = await signUpUserSession(request);
             if (result.status === "success") {
-                printMessage("Welcome! ".concat(username), MSG_TYPE.Success);
+                setModalMessage("Welcome! ".concat(username), "success");
                 setUser(username);
             } else if (result.status === "fail") {
-                printMessage(result.reason, MSG_TYPE.Error);
+                setModalMessage(result.reason, "error");
             }
         }
     }
@@ -88,10 +94,10 @@ export default function LoginModal({
         });
         const result = await fetchUserSession(request);
         if (result.status === "success") {
-            printMessage("Welcome back! ".concat(username), MSG_TYPE.Success);
+            setModalMessage("Welcome back! ".concat(username), "success");
             setUser(username);
         } else if (result.status === "fail") {
-            printMessage(result.reason, MSG_TYPE.Error);
+            setModalMessage(result.reason, "error");
         }
     }
 
@@ -101,10 +107,13 @@ export default function LoginModal({
         setPwd1("");
         setPwd2("");
         setMessage("");
-        setMessageType(MSG_TYPE.Unknown);
+        setMessageType("unknown");
     }
 
-    function printMessage(message: string, messageType: MSG_TYPE) {
+    function setModalMessage(
+        message: string,
+        messageType: LandingLoginModalMessageType
+    ) {
         setMessage(message);
         setMessageType(messageType);
     }
@@ -124,17 +133,19 @@ export default function LoginModal({
                 size="lg"
                 placement="center"
                 backdrop="blur"
+                className={`${isDarkMode ? "dark" : ""} text-foreground`}
+                {...otherProps}
             >
                 <ModalContent>
                     <ModalHeader className="flex flex-col gap-1">
-                        {isLogin === true ? "Login" : "Sign up"}
+                        {isLogin ? "Login" : "Sign up"}
                         <br></br>
                         <small>to continue to your AI Advisor</small>
                     </ModalHeader>
                     <ModalBody>
                         <Input
                             autoFocus
-                            label="Email"
+                            label="Username"
                             placeholder="Enter your username"
                             variant="bordered"
                             id="username"
@@ -157,7 +168,7 @@ export default function LoginModal({
 
                         {!isLogin && (
                             <Input
-                                label="password2"
+                                label="Confirm Password"
                                 placeholder="Confirm your password"
                                 type="password"
                                 variant="bordered"
@@ -177,7 +188,7 @@ export default function LoginModal({
                             }
                             variant="light"
                         >
-                            {isLogin ? "Create account" : "Use signed Account"}
+                            {isLogin ? "Create account" : "Use Signed Account"}
                         </Button>
                         <Button
                             color="danger"
@@ -189,12 +200,13 @@ export default function LoginModal({
                 </ModalContent>
             </Modal>
 
-            <ResponseMsg
+            <LandingLoginResponseDialog
                 type={messageType}
                 content={message}
                 setMessage={setMessage}
                 handler={closeModal}
-            ></ResponseMsg>
+                isDarkMode={isDarkMode}
+            ></LandingLoginResponseDialog>
         </>
     );
 }

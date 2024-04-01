@@ -53,7 +53,7 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
             setHistorySessions(sessions);
             setLoadingSessions(false);
         })();
-    }, []);
+    });
 
     useEffect(() => {
         const component = chatSessionScrollComponent.current;
@@ -111,8 +111,8 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
         }
     }
 
-    async function handleDelete(session: HistorySession, username: string) {
-        await deleteHistorySession({ id: session.id, username: username });
+    async function handleDelete(session: HistorySession) {
+        await deleteHistorySession({ id: session.id });
         setHistorySessions((prevState) =>
             prevState.filter((value) => value.id !== session.id)
         );

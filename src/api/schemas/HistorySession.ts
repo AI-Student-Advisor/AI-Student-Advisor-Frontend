@@ -55,9 +55,7 @@ export const PatchResponseSchema = z.discriminatedUnion("status", [
  * Request payload schema
  */
 export const DeleteRequestSchema = z.object({
-    id: SessionIdSchema,
-    // eslint-disable-next-line no-magic-numbers
-    username: z.string().trim().min(1)
+    id: SessionIdSchema
 });
 
 /**

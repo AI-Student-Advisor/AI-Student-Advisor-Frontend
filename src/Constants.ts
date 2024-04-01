@@ -1,7 +1,2 @@
 export const CHAT_HISTORY_SESSION_ENTRY_LIMIT = 50;
-export enum MSG_TYPE {
-    Info,
-    Success,
-    Error,
-    Unknown
-}
+export const LOGIN_SUCCESS_MODAL_SHOW_DURATION_MS = 3000;

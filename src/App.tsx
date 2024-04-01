@@ -1,15 +1,18 @@
+import About from "./pages/About.tsx";
 import Chat from "./pages/Chat.tsx";
+import { NextUIProvider } from "@nextui-org/react";
 import Landing from "pages/Landing";
-import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useDarkMode } from "usehooks-ts";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import { useDarkMode, useLocalStorage } from "usehooks-ts";
 
 export default function App() {
     const darkMode = useDarkMode();
-    const [userID, setUserID] = useState("");
+    const navigate = useNavigate();
+    const [userID, setUserID] = useLocalStorage("userID", "");
+
     return (
         <div
-            className={`${darkMode.isDarkMode ? "dark" : ""} text-foreground bg-background full-screen`}
+            className={`${darkMode.isDarkMode ? "dark" : ""} text-foreground bg-background h-full w-full`}
         >
             {/* Quirk:
              *  For elements that live outside the React root container, dark theme
@@ -20,7 +23,7 @@ export default function App() {
              *  that may go outside the root container, e.g. modals and menus
              *
              */}
-            <BrowserRouter>
+            <NextUIProvider className="h-full w-full" navigate={navigate}>
                 <Routes>
                     <Route
                         path="/"
@@ -33,13 +36,23 @@ export default function App() {
                         }
                     ></Route>
                     <Route
-                        path="/Chat"
+                        path="/chat"
                         element={
                             <Chat darkMode={darkMode} userID={userID}></Chat>
                         }
                     ></Route>
+                    <Route
+                        path="/about"
+                        element={
+                            <About
+                                darkMode={darkMode}
+                                userID={userID}
+                                setUserID={setUserID}
+                            ></About>
+                        }
+                    ></Route>
                 </Routes>
-            </BrowserRouter>
+            </NextUIProvider>
         </div>
     );
 }

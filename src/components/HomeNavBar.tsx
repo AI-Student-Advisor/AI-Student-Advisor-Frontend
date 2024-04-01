@@ -1,81 +1,55 @@
 import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+    Button,
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownTrigger,
+    Link,
     Navbar,
     NavbarBrand,
     NavbarContent,
     NavbarItem,
-    Link,
-    Button,
-    Switch,
-    Dropdown,
-    DropdownTrigger,
-    DropdownMenu,
-    DropdownItem
+    Switch
 } from "@nextui-org/react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useDarkMode } from "usehooks-ts";
 
-interface loginProps {
+interface HomeNavBarProps {
     userID: string;
     setUserID: React.Dispatch<React.SetStateAction<string>>;
     setIsOpenModal: React.Dispatch<React.SetStateAction<boolean>>;
     darkMode: ReturnType<typeof useDarkMode>;
+    currentPage: "home" | "about";
 }
 
-export default function NavbarComponent({
+export default function HomeNavBar({
     userID,
     setIsOpenModal,
     setUserID,
-    darkMode
-}: loginProps) {
+    darkMode,
+    currentPage,
+    ...otherProps
+}: HomeNavBarProps) {
     const navigate = useNavigate();
+
     function logOut() {
         setUserID("");
     }
 
-    function handleClickAdvisor() {
-        if (userID !== "") {
-            navigate("/Chat");
-        } else {
-            setIsOpenModal(true);
-        }
-    }
-
     return (
-        <Navbar
-            className={darkMode.isDarkMode ? "bg-deepBlue" : "bg-midBlue"}
-            shouldHideOnScroll
-        >
+        <Navbar {...otherProps} shouldHideOnScroll className="absolute">
             <NavbarBrand>
                 <p className="font-bold text-inherit">AI Student Advisor</p>
             </NavbarBrand>
             <NavbarContent className="hidden sm:flex gap-4" justify="start">
-                <NavbarItem isActive>
-                    <Link
-                        isBlock
-                        href="\"
-                        aria-current="page"
-                        underline="always"
-                    >
-                        Home
-                    </Link>
+                <NavbarItem isActive={currentPage === "home"}>
+                    <Link href="/">Home</Link>
                 </NavbarItem>
-                <NavbarItem>
-                    <Link
-                        isBlock
-                        color="foreground"
-                        onClick={handleClickAdvisor}
-                        // eslint-disable-next-line no-magic-numbers
-                        href={void 0}
-                    >
-                        Advisor
-                    </Link>
-                </NavbarItem>
-                <NavbarItem>
-                    <Link isBlock color="foreground" href="\">
-                        About
-                    </Link>
+                <NavbarItem isActive={currentPage === "about"}>
+                    <Link href="/about">About</Link>
                 </NavbarItem>
             </NavbarContent>
             <NavbarContent justify="end">
@@ -90,22 +64,30 @@ export default function NavbarComponent({
                     </Button>
                 )}
                 {userID !== "" && (
-                    <Dropdown>
+                    <Dropdown
+                        className={`${darkMode.isDarkMode ? "dark" : ""} text-foreground`}
+                    >
                         <DropdownTrigger>
                             <Button
+                                className={`${!darkMode.isDarkMode && "text-white"} font-bold`}
                                 color="primary"
-                                variant="light"
-                                className="capitalize"
                             >
                                 Welcome! {userID}
                             </Button>
                         </DropdownTrigger>
-                        <DropdownMenu
-                            aria-label="Dropdown Variants"
-                            color="primary"
-                            variant="light"
-                        >
-                            <DropdownItem onClick={() => logOut()}>
+                        <DropdownMenu color="primary">
+                            <DropdownItem
+                                color="secondary"
+                                onPress={() => {
+                                    navigate("/chat");
+                                }}
+                            >
+                                Chat
+                            </DropdownItem>
+                            <DropdownItem
+                                color="danger"
+                                onClick={() => logOut()}
+                            >
                                 Log out
                             </DropdownItem>
                         </DropdownMenu>
