@@ -38,6 +38,16 @@ const config: Config = {
                 "Courier New",
                 "monospace"
             ]
+        },
+        extend: {
+            colors: {
+                lightBlue: `#9BC1BC`,
+                lightBlue2: `#EDEDF4`,
+                midBlue: `#8EA4CA`,
+                deepBlue: `#26547C`,
+                deepBlue2: `#456990`,
+                fontRed: `#26547C`
+            }
         }
     },
     darkMode: "class",

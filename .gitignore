@@ -34,3 +34,4 @@ Thumbs.db
 
 # vite.js
 .vite
+package-lock.json
