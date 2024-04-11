@@ -1,32 +1,27 @@
+import type { PageProps } from "./interfaces/PageProps.ts";
 import { Card, CardBody, CardHeader } from "@nextui-org/react";
-import HomeNavBar from "components/HomeNavBar.tsx";
-import LandingLoginModal from "components/LandingLoginModal.tsx";
-import React, { useState } from "react";
-import { useDarkMode } from "usehooks-ts";
+import NavBar from "components/NavBar.tsx";
 
-interface LandingProps extends React.ComponentProps<"div"> {
-    darkMode: ReturnType<typeof useDarkMode>;
-    userID: string;
-    setUserID: React.Dispatch<React.SetStateAction<string>>;
-}
+interface LandingProps extends PageProps {}
 
 export default function Landing({
+    onLogIn,
+    onLogOut,
+    displayName,
     darkMode,
-    userID,
-    setUserID,
+    token,
+    jwt,
     ...otherProps
 }: LandingProps) {
-    const [showModal, setModal] = useState(false);
-
     return (
         <div className="h-full" {...otherProps}>
-            <HomeNavBar
-                userID={userID}
-                setUserID={setUserID}
-                setIsOpenModal={setModal}
+            <NavBar
+                onLogIn={onLogIn}
+                onLogOut={onLogOut}
+                displayName={displayName}
                 darkMode={darkMode}
                 currentPage="home"
-            ></HomeNavBar>
+            ></NavBar>
             <div className="flex w-full h-full justify-center items-center">
                 <Card className="max-w-[600px] h-fit" shadow="lg">
                     <CardHeader className="text-4xl font-bold text-center">
@@ -42,13 +37,6 @@ export default function Landing({
                     </CardBody>
                 </Card>
             </div>
-            <LandingLoginModal
-                show={showModal}
-                componentId="loginModal"
-                onHide={setModal}
-                setUser={setUserID}
-                isDarkMode={darkMode.isDarkMode}
-            ></LandingLoginModal>
         </div>
     );
 }

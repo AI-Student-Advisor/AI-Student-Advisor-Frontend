@@ -1,3 +1,4 @@
+import type { PageProps } from "./interfaces/PageProps.ts";
 import { faEllipsis, faPenFancy } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, ScrollShadow } from "@nextui-org/react";
@@ -19,15 +20,16 @@ import ChatInput, { ChatInputStatus } from "components/ChatInput.tsx";
 import ChatSession from "components/ChatSession.tsx";
 import ChatSessionHistory from "components/ChatSessionHistory.tsx";
 import ChatToolbar from "components/ChatToolbar.tsx";
-import React, { useEffect, useRef, useState } from "react";
-import { useDarkMode } from "usehooks-ts";
+import { useEffect, useRef, useState } from "react";
 
-export interface ChatProps extends React.ComponentProps<"div"> {
-    darkMode: ReturnType<typeof useDarkMode>;
-    userID: string;
-}
+export interface ChatProps extends PageProps {}
 
-export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
+export default function Chat({
+    darkMode,
+    token,
+    jwt,
+    ...otherProps
+}: ChatProps) {
     const [inputStatus, setInputStatus] = useState<ChatInputStatus>("idle");
     const [inputValue, setInputValue] = useState("");
     const [historySessions, setHistorySessions] = useState<HistorySession[]>(
@@ -45,11 +47,13 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
 
     useEffect(() => {
         void (async () => {
-            const sessions = await fetchHistorySessions({
-                username: userID,
-                offset: 0,
-                limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
-            });
+            const sessions = await fetchHistorySessions(
+                {
+                    offset: 0,
+                    limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
+                },
+                token
+            );
             setHistorySessions(sessions);
             setLoadingSessions(false);
         })();
@@ -68,11 +72,13 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
     async function handleLoadMore() {
         setLoadingSessions(true);
         try {
-            const sessions = await fetchHistorySessions({
-                username: userID,
-                offset: historySessions.length,
-                limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
-            });
+            const sessions = await fetchHistorySessions(
+                {
+                    offset: historySessions.length,
+                    limit: CHAT_HISTORY_SESSION_ENTRY_LIMIT
+                },
+                token
+            );
             setHistorySessions([...historySessions, ...sessions]);
         } catch (e) {
             console.error(e);
@@ -88,16 +94,19 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
     }
 
     async function handleSelect(session: HistorySession) {
-        const messages = await fetchHistorySession({
-            id: session.id
-        });
+        const messages = await fetchHistorySession(
+            {
+                id: session.id
+            },
+            token
+        );
         setActiveSessionId(session.id);
         setActiveSessionTitle(session.title);
         setMessages(messages);
     }
 
     async function handleRename(session: HistorySession, newName: string) {
-        await renameHistorySession({ id: session.id, name: newName });
+        await renameHistorySession({ id: session.id, name: newName }, token);
         setHistorySessions((prevState) =>
             prevState.map((value) => {
                 if (value.id === session.id) {
@@ -112,7 +121,7 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
     }
 
     async function handleDelete(session: HistorySession) {
-        await deleteHistorySession({ id: session.id });
+        await deleteHistorySession({ id: session.id }, token);
         setHistorySessions((prevState) =>
             prevState.filter((value) => value.id !== session.id)
         );
@@ -135,7 +144,8 @@ export default function Chat({ darkMode, userID, ...otherProps }: ChatProps) {
         setMessages((prevMessages) => [...prevMessages, message]);
 
         void sendMessage(
-            { id: activeSessionId, username: userID, message: message },
+            { id: activeSessionId, message: message },
+            token,
             handleMessage,
             handleControl,
             generationController.current.signal

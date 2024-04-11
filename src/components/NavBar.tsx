@@ -1,3 +1,4 @@
+import NavBarLoginModal from "./NavBarLoginModal.tsx";
 import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,33 +12,36 @@ import {
     NavbarBrand,
     NavbarContent,
     NavbarItem,
-    Switch
+    type NavbarProps,
+    Switch,
+    useDisclosure
 } from "@nextui-org/react";
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useDarkMode } from "usehooks-ts";
+import type { useDarkMode } from "usehooks-ts";
 
-interface HomeNavBarProps {
-    userID: string;
-    setUserID: React.Dispatch<React.SetStateAction<string>>;
-    setIsOpenModal: React.Dispatch<React.SetStateAction<boolean>>;
+interface NavBarProps extends NavbarProps {
+    onLogIn: (token: string) => void;
+    onLogOut: () => void;
+    displayName: string;
     darkMode: ReturnType<typeof useDarkMode>;
     currentPage: "home" | "about";
 }
 
-export default function HomeNavBar({
-    userID,
-    setIsOpenModal,
-    setUserID,
+export default function NavBar({
+    onLogIn,
+    onLogOut,
+    displayName,
     darkMode,
     currentPage,
     ...otherProps
-}: HomeNavBarProps) {
-    const navigate = useNavigate();
+}: NavBarProps) {
+    const {
+        isOpen: isModalOpen,
+        onOpen: openModal,
+        onOpenChange: onModalOpenChange
+    } = useDisclosure();
 
-    function logOut() {
-        setUserID("");
-    }
+    const navigate = useNavigate();
 
     return (
         <Navbar {...otherProps} shouldHideOnScroll className="absolute">
@@ -53,17 +57,17 @@ export default function HomeNavBar({
                 </NavbarItem>
             </NavbarContent>
             <NavbarContent justify="end">
-                {userID === "" && (
+                {displayName === "" && (
                     <Button
                         className="hidden lg:flex"
                         variant="flat"
                         color="primary"
-                        onClick={() => setIsOpenModal(true)}
+                        onClick={openModal}
                     >
-                        Login
+                        Log In & Sign Up
                     </Button>
                 )}
-                {userID !== "" && (
+                {displayName !== "" && (
                     <Dropdown
                         className={`${darkMode.isDarkMode ? "dark" : ""} text-foreground`}
                     >
@@ -72,7 +76,7 @@ export default function HomeNavBar({
                                 className={`${!darkMode.isDarkMode && "text-white"} font-bold`}
                                 color="primary"
                             >
-                                Welcome! {userID}
+                                Welcome! {displayName}
                             </Button>
                         </DropdownTrigger>
                         <DropdownMenu color="primary">
@@ -84,16 +88,12 @@ export default function HomeNavBar({
                             >
                                 Chat
                             </DropdownItem>
-                            <DropdownItem
-                                color="danger"
-                                onClick={() => logOut()}
-                            >
+                            <DropdownItem color="danger" onClick={onLogOut}>
                                 Log out
                             </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
                 )}
-
                 <NavbarItem>
                     <Switch
                         isSelected={!darkMode.isDarkMode}
@@ -109,6 +109,13 @@ export default function HomeNavBar({
                     ></Switch>
                 </NavbarItem>
             </NavbarContent>
+            <NavBarLoginModal
+                isOpen={isModalOpen}
+                onOpenChange={onModalOpenChange}
+                onLogIn={onLogIn}
+                isDarkMode={darkMode.isDarkMode}
+                children={null}
+            />
         </Navbar>
     );
 }

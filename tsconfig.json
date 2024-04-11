@@ -4,9 +4,9 @@
     "module": "ESNext",
     "useDefineForClassFields": true,
     "lib": [
-      "ESNext",
       "DOM",
-      "DOM.Iterable"
+      "DOM.Iterable",
+      "ESNext"
     ],
     "strict": true,
     "esModuleInterop": true,

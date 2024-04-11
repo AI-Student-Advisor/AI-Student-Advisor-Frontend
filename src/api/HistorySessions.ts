@@ -9,12 +9,19 @@ import { toQueryString } from "utils/Utils.ts";
 const endpoint = "/api/history-sessions";
 
 export async function fetchHistorySessions(
-    request: GetRequest
+    request: GetRequest,
+    token: string
 ): Promise<Array<HistorySession>> {
     const parsedRequest = GetRequestSchema.parse(request);
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ROOT}${endpoint}${toQueryString(parsedRequest, true)}`
+        `${import.meta.env.VITE_API_ROOT}${endpoint}${toQueryString(parsedRequest, true)}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
     );
     const data = GetResponseSchema.parse(await response.json());
 

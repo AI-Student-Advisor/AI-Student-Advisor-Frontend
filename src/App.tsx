@@ -1,14 +1,33 @@
+import { JWT_VERIFY_CLOCK_TOLERANCE, JWT_VERIFY_ISSUER } from "./Constants.ts";
+import { JWTVerifier } from "./auth/JWTVerifier.ts";
 import About from "./pages/About.tsx";
 import Chat from "./pages/Chat.tsx";
 import { NextUIProvider } from "@nextui-org/react";
 import Landing from "pages/Landing";
+import { useRef } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { useDarkMode, useLocalStorage } from "usehooks-ts";
 
 export default function App() {
     const darkMode = useDarkMode();
     const navigate = useNavigate();
-    const [userID, setUserID] = useLocalStorage("userID", "");
+    const [token, setToken] = useLocalStorage("token", "");
+    const jwt = useRef(
+        new JWTVerifier({
+            algorithms: ["ES256"],
+            // 5 minutes
+            clockTolerance: JWT_VERIFY_CLOCK_TOLERANCE,
+            issuer: JWT_VERIFY_ISSUER
+        })
+    );
+
+    function handleLogIn(token: string) {
+        setToken(token);
+    }
+
+    function handleLogOut() {
+        setToken("");
+    }
 
     return (
         <div
@@ -29,25 +48,38 @@ export default function App() {
                         path="/"
                         element={
                             <Landing
+                                onLogIn={handleLogIn}
+                                onLogOut={handleLogOut}
+                                displayName=""
                                 darkMode={darkMode}
-                                userID={userID}
-                                setUserID={setUserID}
+                                token={token}
+                                jwt={jwt}
                             ></Landing>
                         }
                     ></Route>
                     <Route
                         path="/chat"
                         element={
-                            <Chat darkMode={darkMode} userID={userID}></Chat>
+                            <Chat
+                                onLogIn={handleLogIn}
+                                onLogOut={handleLogOut}
+                                displayName=""
+                                darkMode={darkMode}
+                                token={token}
+                                jwt={jwt}
+                            ></Chat>
                         }
                     ></Route>
                     <Route
                         path="/about"
                         element={
                             <About
+                                onLogIn={handleLogIn}
+                                onLogOut={handleLogOut}
+                                displayName=""
                                 darkMode={darkMode}
-                                userID={userID}
-                                setUserID={setUserID}
+                                token={token}
+                                jwt={jwt}
                             ></About>
                         }
                     ></Route>

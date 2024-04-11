@@ -15,11 +15,17 @@ import { toQueryString } from "utils/Utils.ts";
 
 const endpoint = "/api/history-session";
 
-export async function fetchHistorySession(request: GetRequest) {
+export async function fetchHistorySession(request: GetRequest, token: string) {
     const { id, ...parsedRequest } = GetRequestSchema.parse(request);
 
     const response = await fetch(
-        `${import.meta.env.VITE_API_ROOT}${endpoint}/${id}${toQueryString(parsedRequest, true)}`
+        `${import.meta.env.VITE_API_ROOT}${endpoint}/${id}${toQueryString(parsedRequest, true)}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
     );
     const data = GetResponseSchema.parse(await response.json());
 
@@ -34,7 +40,10 @@ export async function fetchHistorySession(request: GetRequest) {
     }
 }
 
-export async function renameHistorySession(request: PatchRequest) {
+export async function renameHistorySession(
+    request: PatchRequest,
+    token: string
+) {
     const { id, ...parsedRequest } = PatchRequestSchema.parse(request);
 
     const response = await fetch(
@@ -42,7 +51,8 @@ export async function renameHistorySession(request: PatchRequest) {
         {
             method: "PATCH",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify(parsedRequest)
         }
@@ -57,7 +67,10 @@ export async function renameHistorySession(request: PatchRequest) {
     }
 }
 
-export async function deleteHistorySession(request: DeleteRequest) {
+export async function deleteHistorySession(
+    request: DeleteRequest,
+    token: string
+) {
     const { id, ...parsedRequest } = DeleteRequestSchema.parse(request);
 
     const response = await fetch(
@@ -65,7 +78,8 @@ export async function deleteHistorySession(request: DeleteRequest) {
         {
             method: "DELETE",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify(parsedRequest)
         }
