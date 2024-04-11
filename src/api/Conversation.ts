@@ -14,6 +14,7 @@ const endpoint = "/api/conversation";
 
 export async function sendMessage(
     request: PostRequest,
+    token: string,
     onMessage?: OnMessageCallback,
     onControl?: OnControlCallback,
     signal?: AbortSignal
@@ -23,7 +24,8 @@ export async function sendMessage(
     await fetchEventSource(`${import.meta.env.VITE_API_ROOT}${endpoint}`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
         },
         signal: signal,
         openWhenHidden: true,

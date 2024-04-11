@@ -1,7 +1,7 @@
 import {
     PostUserRequestSchema,
     PostUserResponseSchema
-} from "../schemas/SignUpSession.ts";
+} from "api/schemas/LogIn.ts";
 import { z } from "zod";
 
 export type PostUserRequest = z.infer<typeof PostUserRequestSchema>;

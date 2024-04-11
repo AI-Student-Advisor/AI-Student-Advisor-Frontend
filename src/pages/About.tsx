@@ -1,30 +1,25 @@
-import HomeNavBar from "components/HomeNavBar.tsx";
-import React, { useState } from "react";
-import { useDarkMode } from "usehooks-ts";
+import type { PageProps } from "./interfaces/PageProps.ts";
+import NavBar from "components/NavBar.tsx";
 
-interface AboutProps extends React.ComponentProps<"div"> {
-    darkMode: ReturnType<typeof useDarkMode>;
-    userID: string;
-    setUserID: React.Dispatch<React.SetStateAction<string>>;
-}
+interface AboutProps extends PageProps {}
 
 export default function About({
+    onLogIn,
+    onLogOut,
+    displayName,
     darkMode,
-    userID,
-    setUserID,
+    token,
     ...otherProps
 }: AboutProps) {
-    const [, setModal] = useState(false);
-
     return (
         <div className="h-full" {...otherProps}>
-            <HomeNavBar
-                userID={userID}
-                setUserID={setUserID}
-                setIsOpenModal={setModal}
+            <NavBar
+                onLogIn={onLogIn}
+                onLogOut={onLogOut}
+                displayName={displayName}
                 darkMode={darkMode}
                 currentPage="about"
-            ></HomeNavBar>
+            ></NavBar>
             <div className="flex w-full h-full justify-center items-center">
                 TODO
             </div>
