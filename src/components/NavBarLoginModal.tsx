@@ -8,7 +8,10 @@ import {
     ModalContent,
     ModalFooter,
     ModalHeader,
-    type ModalProps
+    type ModalProps,
+    Popover,
+    PopoverContent,
+    PopoverTrigger
 } from "@nextui-org/react";
 import { logIn } from "api/LogIn.ts";
 import { signUp } from "api/SignUp.ts";
@@ -43,6 +46,7 @@ export default function NavBarLoginModal({
     const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
     const [confirmPasswordErrorMessage, setConfirmPasswordErrorMessage] =
         useState("");
+    const [serverErrorMessage, setServerErrorMessage] = useState("");
 
     // Check whether it is in login page or sign up page
     const [isLogInForm, setIsLogInForm] = useState(true);
@@ -57,14 +61,20 @@ export default function NavBarLoginModal({
     }
 
     async function handleSubmitForm(onClose: () => void) {
-        if (isLogInForm) {
-            if (await handleUserLogIn()) {
+        try {
+            if (isLogInForm) {
+                await handleUserLogIn();
                 onClose();
+                return;
             }
-        } else {
-            if (await handleUserSignUp()) {
-                onClose();
+            await handleUserSignUp();
+            onClose();
+        } catch (e) {
+            if (e instanceof Error) {
+                setServerErrorMessage(e.message);
+                return;
             }
+            setServerErrorMessage(String(e));
         }
     }
 
@@ -105,6 +115,12 @@ export default function NavBarLoginModal({
             const password = PasswordSchema.parse(value);
             setPassword(password);
             setPasswordErrorMessage("");
+
+            if (confirmPassword !== "" && value !== confirmPassword) {
+                setConfirmPasswordErrorMessage("Password does not match");
+            } else {
+                setConfirmPasswordErrorMessage("");
+            }
         } catch (e) {
             /* ignored */
         }
@@ -141,13 +157,15 @@ export default function NavBarLoginModal({
     }
 
     function isButtonDisabled() {
-        const fieldNotEmpty =
-            username && password && (isLogInForm || confirmPassword);
-        const hasErrorMessages =
+        const fieldNotEmpty = Boolean(
+            username && password && (isLogInForm || confirmPassword)
+        );
+        const hasErrorMessages = Boolean(
             usernameErrorMessage ||
-            passwordErrorMessage ||
-            (!isLogInForm && confirmPasswordErrorMessage);
-        return Boolean(!fieldNotEmpty || hasErrorMessages);
+                passwordErrorMessage ||
+                (!isLogInForm && confirmPasswordErrorMessage)
+        );
+        return !fieldNotEmpty || hasErrorMessages;
     }
 
     async function handleUserSignUp() {
@@ -156,12 +174,8 @@ export default function NavBarLoginModal({
             password: password
         });
         const result = await signUp(request);
-        if (result.status === "success") {
-            onLogIn(result.token);
-            clearForm();
-            return true;
-        }
-        return false;
+        onLogIn(result.token);
+        reset();
     }
 
     async function handleUserLogIn() {
@@ -170,22 +184,19 @@ export default function NavBarLoginModal({
             password: password
         });
         const result = await logIn(request);
-        if (result.status === "success") {
-            onLogIn(result.token);
-            clearForm();
-            return true;
-        }
-        return false;
+        onLogIn(result.token);
+        reset();
     }
 
-    // Clear the user input after closing the login modal
-    function clearForm() {
+    // Reset the modal state
+    function reset() {
         setUsername("");
         setPassword("");
         setConfirmPassword("");
         setUsernameErrorMessage("");
         setPasswordErrorMessage("");
         setConfirmPasswordErrorMessage("");
+        setServerErrorMessage("");
     }
 
     return (
@@ -237,7 +248,6 @@ export default function NavBarLoginModal({
                                     handleSubmitFormKeyboard(e, onClose)
                                 }
                             ></Input>
-
                             {!isLogInForm && (
                                 <Input
                                     label="Confirm Password"
@@ -268,15 +278,37 @@ export default function NavBarLoginModal({
                                     ? "Create account"
                                     : "Use Signed Account"}
                             </Button>
-                            <Button
-                                color="primary"
-                                variant="solid"
-                                className="text-white"
-                                onPress={() => handleSubmitForm(onClose)}
-                                isDisabled={isButtonDisabled()}
+                            <Popover
+                                placement="bottom"
+                                color="danger"
+                                isOpen={serverErrorMessage !== ""}
+                                onOpenChange={(open) =>
+                                    !open && setServerErrorMessage("")
+                                }
+                                className={`${isDarkMode ? "dark" : ""} text-foreground`}
                             >
-                                {isLogInForm ? "Sign in" : "Sign up"}
-                            </Button>
+                                <PopoverTrigger>
+                                    <Button
+                                        color="primary"
+                                        variant="solid"
+                                        className="text-white"
+                                        onClick={() =>
+                                            handleSubmitForm(onClose)
+                                        }
+                                        isDisabled={isButtonDisabled()}
+                                    >
+                                        {isLogInForm ? "Sign In" : "Sign Up"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                    <div
+                                        className="max-w-unit-5xl"
+                                        style={{ wordBreak: "break-all" }}
+                                    >
+                                        {serverErrorMessage}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </ModalFooter>
                     </>
                 )}
