@@ -9,7 +9,6 @@ export default function About({
     displayName,
     darkMode,
     token,
-    jwt,
     ...otherProps
 }: AboutProps) {
     return (

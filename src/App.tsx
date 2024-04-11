@@ -4,7 +4,7 @@ import About from "./pages/About.tsx";
 import Chat from "./pages/Chat.tsx";
 import { NextUIProvider } from "@nextui-org/react";
 import Landing from "pages/Landing";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { useDarkMode, useLocalStorage } from "usehooks-ts";
 
@@ -12,7 +12,8 @@ export default function App() {
     const darkMode = useDarkMode();
     const navigate = useNavigate();
     const [token, setToken] = useLocalStorage("token", "");
-    const jwt = useRef(
+    const [displayName, setDisplayName] = useState("");
+    const jwtVerifier = useRef(
         new JWTVerifier({
             algorithms: ["ES256"],
             // 5 minutes
@@ -26,8 +27,26 @@ export default function App() {
     }
 
     function handleLogOut() {
+        setDisplayName("");
         setToken("");
     }
+
+    // Verify and decode the JWT token.
+    // If the token is not valid, clear the storage
+    useEffect(() => {
+        if (!token) {
+            handleLogOut();
+        }
+
+        void (async () => {
+            try {
+                const { username } = await jwtVerifier.current.decode(token);
+                setDisplayName(username);
+            } catch (e) {
+                handleLogOut();
+            }
+        })();
+    }, [token]);
 
     return (
         <div
@@ -50,24 +69,16 @@ export default function App() {
                             <Landing
                                 onLogIn={handleLogIn}
                                 onLogOut={handleLogOut}
-                                displayName=""
+                                displayName={displayName}
                                 darkMode={darkMode}
                                 token={token}
-                                jwt={jwt}
                             ></Landing>
                         }
                     ></Route>
                     <Route
                         path="/chat"
                         element={
-                            <Chat
-                                onLogIn={handleLogIn}
-                                onLogOut={handleLogOut}
-                                displayName=""
-                                darkMode={darkMode}
-                                token={token}
-                                jwt={jwt}
-                            ></Chat>
+                            <Chat darkMode={darkMode} token={token}></Chat>
                         }
                     ></Route>
                     <Route
@@ -76,10 +87,9 @@ export default function App() {
                             <About
                                 onLogIn={handleLogIn}
                                 onLogOut={handleLogOut}
-                                displayName=""
+                                displayName={displayName}
                                 darkMode={darkMode}
                                 token={token}
-                                jwt={jwt}
                             ></About>
                         }
                     ></Route>

@@ -20,12 +20,16 @@ export class JWTVerifier {
     }
 
     async decode(token: string) {
-        const publicKey = await importSPKI(this.publicKey, "RS256");
+        const publicKey = await importSPKI(
+            this.publicKey,
+            this.verifyOptions?.algorithms?.at(0) || "ES256"
+        );
         const verifyResult = await jwtVerify(
             token,
             publicKey,
             this.verifyOptions
         );
+
         const authPayload = verifyResult.payload as AuthPayload;
         return AuthPayloadSchema.parse(authPayload);
     }

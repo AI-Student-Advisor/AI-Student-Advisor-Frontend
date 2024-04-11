@@ -21,15 +21,12 @@ import ChatSession from "components/ChatSession.tsx";
 import ChatSessionHistory from "components/ChatSessionHistory.tsx";
 import ChatToolbar from "components/ChatToolbar.tsx";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export interface ChatProps extends PageProps {}
+type UnwantedProps = "onLogIn" | "onLogOut" | "displayName";
+export interface ChatProps extends Omit<PageProps, UnwantedProps> {}
 
-export default function Chat({
-    darkMode,
-    token,
-    jwt,
-    ...otherProps
-}: ChatProps) {
+export default function Chat({ darkMode, token, ...otherProps }: ChatProps) {
     const [inputStatus, setInputStatus] = useState<ChatInputStatus>("idle");
     const [inputValue, setInputValue] = useState("");
     const [historySessions, setHistorySessions] = useState<HistorySession[]>(
@@ -44,6 +41,14 @@ export default function Chat({
         useState<string>("New Chat");
     const generationController = useRef<AbortController>(new AbortController());
     const chatSessionScrollComponent = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
+
+    // Check if token is present
+    useEffect(() => {
+        if (token === "") {
+            navigate("/");
+        }
+    }, [token, navigate]);
 
     useEffect(() => {
         void (async () => {
@@ -57,7 +62,7 @@ export default function Chat({
             setHistorySessions(sessions);
             setLoadingSessions(false);
         })();
-    });
+    }, [token]);
 
     useEffect(() => {
         const component = chatSessionScrollComponent.current;

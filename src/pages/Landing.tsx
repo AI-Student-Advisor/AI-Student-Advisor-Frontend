@@ -10,7 +10,6 @@ export default function Landing({
     displayName,
     darkMode,
     token,
-    jwt,
     ...otherProps
 }: LandingProps) {
     return (

@@ -1,4 +1,3 @@
-import type { JWTVerifier } from "auth/JWTVerifier.ts";
 import React from "react";
 import { useDarkMode } from "usehooks-ts";
 
@@ -8,5 +7,4 @@ export interface PageProps extends React.ComponentProps<"div"> {
     displayName: string;
     darkMode: ReturnType<typeof useDarkMode>;
     token: string;
-    jwt: React.MutableRefObject<JWTVerifier>;
 }
